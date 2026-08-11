@@ -1,0 +1,5 @@
+{
+  "repo_url": "https://github.com/itsvlxd/retrowallpapers.git",
+  "raw_base": "https://raw.githubusercontent.com/itsvlxd/retrowallpapers/main",
+  "collections": [{"name":"noir","branch":"noir","count":8,"size_bytes":87052677,"size_human":"83.0 MB","sha":"0338691caff1f294795a25cec2fc2b2930162e97","description":"Dark, monochrome and cinematic. Stripped of color, full of mood."},{"name":"retro","branch":"retro","count":21,"size_bytes":136653325,"size_human":"130.3 MB","sha":"0d67fd7d7928a3a2b1040b59641892187360e4be","description":"Neon-soaked synthwave, retro cars and outrun vibes."},{"name":"sunset","branch":"sunset","count":9,"size_bytes":287934781,"size_human":"274.6 MB","sha":"82f14a71a36544e66ffb54703be1f85b4ae85006","description":"Golden-hour landscapes, calm oceans and warm skies."}]
+}
