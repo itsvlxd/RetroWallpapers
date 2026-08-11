@@ -26,8 +26,8 @@ jobs:
 
       - name: Build metadata + README
         run: |
-          chmod +x scripts/cli.sh
-          bash scripts/cli.sh build
+          chmod +x retrowal
+          bash retrowal build
 
       - name: Commit to main
         env:
@@ -37,7 +37,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout main
           git pull --rebase origin main
-          bash scripts/cli.sh build
+          bash retrowal build
           if ! git diff --quiet HEAD -- metadata.json README.md; then
             git add metadata.json README.md
             git commit -m "chore(metadata): update collections info [skip ci]"

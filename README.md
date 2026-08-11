@@ -85,13 +85,13 @@ The easiest way is the bundled CLI:
 
 ```bash
 # Create a new collection from a folder of wallpapers
-./cli.sh create mypack /path/to/wallpapers
+./retrowal create mypack /path/to/wallpapers
 
 # Regenerate metadata.json + the README table
-./cli.sh build
+./retrowal build
 
 # Push all branches to GitHub
-./cli.sh publish
+./retrowal publish
 ```
 
 It recomputes file counts, sizes and branch SHAs, then updates this README's collection table automatically. On push, a GitHub Action re-runs the same build to keep `main` in sync.

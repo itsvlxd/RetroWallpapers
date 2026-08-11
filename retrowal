@@ -3,7 +3,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(dirname "$SCRIPT_DIR")"
+REPO_ROOT="$SCRIPT_DIR"
 
 export RETRO_DIR="$REPO_ROOT"
 
@@ -16,8 +16,8 @@ RAW_BASE="${WALLPAPER_RAW_BASE:-https://raw.githubusercontent.com/itsvlxd/retrow
 METADATA_FILE="$REPO_ROOT/metadata.json"
 README_FILE="$REPO_ROOT/README.md"
 
-_cli_help() {
-    rx_help_usage "./cli.sh <command> [options]"
+_retrowal_help() {
+    rx_help_usage "./retrowal <command> [options]"
     rx_help_commands "Available commands"
     rx_help_cmd "build" "Compute metadata.json + refresh the README collection table"
     rx_help_cmd "create <name> [dir]" "Create a new collection from a folder of wallpapers"
@@ -25,9 +25,9 @@ _cli_help() {
     rx_help_cmd "list" "List collections in this repo"
     rx_help_cmd "--help, -h" "Show this help message"
     rx_help_examples
-    rx_help_example "./cli.sh build" "Regenerate metadata + README"
-    rx_help_example "./cli.sh create neon /tmp/my-wallpapers" "Create the 'neon' collection"
-    rx_help_example "./cli.sh publish --yes" "Push everything, skip prompts"
+    rx_help_example "./retrowal build" "Regenerate metadata + README"
+    rx_help_example "./retrowal create neon /tmp/my-wallpapers" "Create the 'neon' collection"
+    rx_help_example "./retrowal publish --yes" "Push everything, skip prompts"
     rx_help_spacer
 }
 
@@ -35,14 +35,12 @@ _is_valid_collection() {
     [[ $1 =~ ^[a-z0-9_-]+$ ]]
 }
 
-# Enumerate collection branches (all refs, excluding main).
 _collection_branches() {
     git -C "$REPO_ROOT" for-each-ref --format='%(refname)' refs/heads refs/remotes/origin 2>/dev/null \
         | sed 's#^refs/heads/##; s#^refs/remotes/origin/##' \
         | grep -vE '^(main|HEAD)$' | sort -u
 }
 
-# Compute metadata for a single branch and emit a JSON entry.
 _branch_meta() {
     local branch="$1"
     local count=0 size=0
@@ -119,8 +117,6 @@ cmd_readme() {
         table+="| **$name** | \`$name\` | $count | $size | $desc |"$'\n'
     done < <(jq -c '.collections[]' "$METADATA_FILE")
 
-    # Replace the rows between COLLECTIONS:START and COLLECTIONS:END with the
-    # freshly computed table rows (the header stays in the README).
     awk -v repl="$table" '
         /<!-- COLLECTIONS:START -->/ { print; in_table=1; printf "%s", repl; next }
         /<!-- COLLECTIONS:END -->/   { print; in_table=0; next }
@@ -135,7 +131,7 @@ cmd_create() {
     local src_dir="${2:-}"
 
     if [[ -z $name ]]; then
-        rx_log "error" "Usage: ./cli.sh create <name> [wallpapers-dir]"
+        rx_log "error" "Usage: ./retrowal create <name> [wallpapers-dir]"
         return 1
     fi
     if ! _is_valid_collection "$name"; then
@@ -170,7 +166,6 @@ cmd_create() {
         git -C "$REPO_ROOT" rm -rf . >/dev/null 2>&1 || true
     fi
 
-    # Clean any leftover files that git rm didn't catch (untracked).
     git -C "$REPO_ROOT" clean -fdx >/dev/null 2>&1 || true
 
     cp "$src_dir"/* .
@@ -231,7 +226,7 @@ cmd_list() {
     rx_table_spacer
 }
 
-_cli_main() {
+_retrowal_main() {
     local command="${1:-}"
     [[ -z $command ]] && command="help"
 
@@ -241,13 +236,13 @@ _cli_main() {
         create) cmd_create "$2" "$3" ;;
         publish) cmd_publish "${2:-}" ;;
         list) cmd_list ;;
-        help | -h | --help) _cli_help ;;
-        *) _cli_help ;;
+        help | -h | --help) _retrowal_help ;;
+        *) _retrowal_help ;;
     esac
 }
 
 if [[ ${BASH_SOURCE[0]} != "${0}" ]]; then
-    export -f _cli_main cmd_build cmd_readme cmd_create cmd_publish cmd_list
+    export -f _retrowal_main cmd_build cmd_readme cmd_create cmd_publish cmd_list
 else
-    _cli_main "$@"
+    _retrowal_main "$@"
 fi
