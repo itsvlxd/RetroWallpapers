@@ -111,10 +111,13 @@ This repository is licensed under the **Creative Commons Attribution 4.0 Interna
 You are free to share and adapt the curated collections, provided you give appropriate credit. Wallpapers sourced from third-party creators (e.g. moewalls.com) retain their original rights — contact the original authors before commercial redistribution.
 
 <br><br>
-
+---
 <div align="center">
-  <img src="assets/logo-palm-transparent-bg.png" alt="Palm" width="35" style="vertical-align: middle; margin-right: 4px;">
-  <img src="assets/logo-main-transparent-bg.png" alt="RetroLinux" width="180" style="vertical-align: middle;">
+  <img src="https://raw.githubusercontent.com/itsvlxd/RetroLinux/develop/assets/logo-palm-transparent-bg.png" alt="Palm" width="35" style="vertical-align: middle; margin-right: 4px;">
+  <img src="https://raw.githubusercontent.com/itsvlxd/RetroLinux/develop/assets/logo-main-transparent-bg.png" alt="RetroLinux" width="180" style="vertical-align: middle; margin-right: 4px;">
+  <img src="https://raw.githubusercontent.com/itsvlxd/RetroLinux/develop/assets/logo-palm-transparent-bg.png" alt="Palm" width="35" style="vertical-align: middle;">
+
+  <sub>© 2026 itsvlxd & Contributors • Part of the <a href="https://github.com/itsvlxd/RetroLinux">RetroLinux</a> ecosystem &nbsp;&nbsp;|&nbsp;&nbsp; <a href="https://github.com/itsvlxd/RetroLinux">🌴 RetroLinux</a> • <a href="https://github.com/itsvlxd/retrowallpapers">🖼️ Wallpapers</a> • <a href="https://github.com/itsvlxd/retrowallpapers/issues">🐛 Issues</a> • <a href="https://github.com/itsvlxd/retrowallpapers/pulls">🔧 Pulls</a></sub>
   <br>
-  <sub>© 2026 itsvlxd • Part of the <a href="https://github.com/itsvlxd/RetroLinux">RetroLinux</a> ecosystem</sub>
+  <sub><i>Licensed under CC BY 4.0. You are free to share and adapt the curated collections with attribution, provided completely without warranty of any kind.</i></sub>
 </div>
