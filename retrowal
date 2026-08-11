@@ -44,11 +44,16 @@ _collection_branches() {
 _branch_meta() {
     local branch="$1"
     local count=0 size=0
+    local has_static=false has_live=false
 
     while IFS=$'\t' read -r sz path; do
         [[ -z $sz ]] && continue
         count=$((count + 1))
         size=$((size + sz))
+        case "${path,,}" in
+            *.png|*.jpg|*.jpeg|*.webp|*.gif) has_static=true ;;
+            *.mp4|*.mkv|*.webm) has_live=true ;;
+        esac
     done < <(git -C "$REPO_ROOT" ls-tree -rl "$branch" 2>/dev/null | awk '{print $4"\t"$5}' | grep -iE '\.(png|jpg|jpeg|webp|gif|mp4|mkv|webm)$')
 
     [[ $count -eq 0 ]] && return 1
@@ -65,8 +70,23 @@ _branch_meta() {
         sunset) desc="Golden-hour landscapes, calm oceans and warm skies." ;;
     esac
 
-    printf '{"name":"%s","branch":"%s","count":%d,"size_bytes":%d,"size_human":"%s MB","sha":"%s","description":"%s"}' \
-        "$branch" "$branch" "$count" "$size" "$size_mb" "$sha" "$desc"
+    local tags=""
+    local first=1
+    if [[ $has_static == true ]]; then
+        tags="\"static\""
+        first=0
+    fi
+    if [[ $has_live == true ]]; then
+        if [[ $first == 1 ]]; then
+            tags="\"live\""
+        else
+            tags="$tags,\"live\""
+        fi
+    fi
+    [[ -z $tags ]] && tags="[]" || tags="[$tags]"
+
+    printf '{"name":"%s","branch":"%s","count":%d,"size_bytes":%d,"size_human":"%s MB","sha":"%s","description":"%s","tags":%s}' \
+        "$branch" "$branch" "$count" "$size" "$size_mb" "$sha" "$desc" "$tags"
 }
 
 cmd_build() {
