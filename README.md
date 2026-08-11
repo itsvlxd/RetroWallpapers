@@ -18,9 +18,11 @@ Arch. Retro. Neon. Hand-tuned packs for every mood — pulled straight into your
 
 | Collection | Branch | Wallpapers | Size | Mood |
 |------------|:------:|:----------:|:----:|------|
-| **noir** | `noir` | 8 | 83 MB | Dark, monochrome, cinematic |
-| **retro** | `retro` | 21 | 130 MB | Neon-soaked synthwave, outrun |
-| **sunset** | `sunset` | 9 | 275 MB | Golden hour, calm skies |
+<!-- COLLECTIONS:START -->
+| **noir** | `noir` | 8 | 83.0 MB | Dark, monochrome and cinematic. Stripped of color, full of mood. |
+| **retro** | `retro` | 21 | 130.3 MB | Neon-soaked synthwave, retro cars and outrun vibes. |
+| **sunset** | `sunset` | 9 | 274.6 MB | Golden-hour landscapes, calm oceans and warm skies. |
+<!-- COLLECTIONS:END -->
 
 > Sizes auto-computed by GitHub Actions and stored in [`metadata.json`](metadata.json).
 
@@ -79,22 +81,20 @@ Each collection is an **orphan branch** — a clean, history-free branch with on
 
 Collections live on **orphan branches**. Each branch holds only its own wallpapers; `main` holds this README, previews, and `metadata.json`.
 
-1. Checkout the orphan branch:
+The easiest way is the bundled CLI:
 
-   ```bash
-   git checkout --orphan mypack
-   git rm -rf . >/dev/null 2>&1 || true
-   ```
+```bash
+# Create a new collection from a folder of wallpapers
+./cli.sh create mypack /path/to/wallpapers
 
-2. Drop your wallpaper files in, then:
+# Regenerate metadata.json + the README table
+./cli.sh build
 
-   ```bash
-   git add .
-   git commit -m "Add mypack collection"
-   git push origin mypack
-   ```
+# Push all branches to GitHub
+./cli.sh publish
+```
 
-3. On push, a GitHub Action recomputes `metadata.json` (file count, total size, branch SHA) and pushes it to `main` automatically.
+It recomputes file counts, sizes and branch SHAs, then updates this README's collection table automatically. On push, a GitHub Action re-runs the same build to keep `main` in sync.
 
 To remove a collection, delete the branch:
 
@@ -106,7 +106,9 @@ git push origin --delete mypack
 
 ## 📜 License
 
-The wallpapers in this repository are provided for personal use with RetroLinux.
+This repository is licensed under the **Creative Commons Attribution 4.0 International** ([CC BY 4.0](LICENSE)).
+
+You are free to share and adapt the curated collections, provided you give appropriate credit. Wallpapers sourced from third-party creators (e.g. moewalls.com) retain their original rights — contact the original authors before commercial redistribution.
 
 <br><br>
 
