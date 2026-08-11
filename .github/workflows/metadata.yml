@@ -1,0 +1,42 @@
+name: Update metadata
+
+on:
+  push:
+    branches:
+      - '**'
+
+permissions:
+  contents: write
+
+jobs:
+  metadata:
+    runs-on: ubuntu-latest
+    if: github.ref_name != 'main'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Build metadata.json
+        run: |
+          chmod +x scripts/build_metadata.sh
+          bash scripts/build_metadata.sh --gh
+
+      - name: Push metadata to main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout main
+          git pull --rebase origin main
+          bash scripts/build_metadata.sh --gh
+          if ! git diff --quiet HEAD -- metadata.json; then
+            git add metadata.json
+            git commit -m "chore(metadata): update collection metadata [skip ci]"
+            git push origin main
+          else
+            echo "metadata.json unchanged, skipping push"
+          fi
