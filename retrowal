@@ -106,7 +106,8 @@ EOF
 cmd_readme() {
     rx_log "info" "Refreshing README collection table..."
 
-    local table=""
+    local table="| Collection | Branch | Wallpapers | Size | Mood |
+|------------|:------:|:----------:|:----:|------|"
     while IFS= read -r line; do
         [[ -z $line ]] && continue
         local name count size desc
@@ -114,11 +115,11 @@ cmd_readme() {
         count=$(echo "$line" | jq -r '.count')
         size=$(echo "$line" | jq -r '.size_human')
         desc=$(echo "$line" | jq -r '.description')
-        table+="| **$name** | \`$name\` | $count | $size | $desc |"$'\n'
+        table+=$'\n'"| **$name** | \`$name\` | $count | $size | $desc |"
     done < <(jq -c '.collections[]' "$METADATA_FILE")
 
     awk -v repl="$table" '
-        /<!-- COLLECTIONS:START -->/ { print; in_table=1; printf "%s", repl; next }
+        /<!-- COLLECTIONS:START -->/ { print; in_table=1; printf "%s\n", repl; next }
         /<!-- COLLECTIONS:END -->/   { print; in_table=0; next }
         !in_table                     { print }
     ' "$README_FILE" >"$README_FILE.tmp" && mv "$README_FILE.tmp" "$README_FILE"
