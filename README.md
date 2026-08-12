@@ -19,6 +19,7 @@ Arch. Retro. Neon. Hand-tuned packs for every mood — pulled straight into your
 <!-- COLLECTIONS:START -->
 | Collection | Branch | Wallpapers | Size | Mood |
 |------------|:------:|:----------:|:----:|------|
+| **dedsec** | `dedsec` | 11 | 7.1 MB |  |
 | **noir** | `noir` | 8 | 83.0 MB | Dark, monochrome and cinematic. Stripped of color, full of mood. |
 | **retro** | `retro` | 21 | 130.3 MB | Neon-soaked synthwave, retro cars and outrun vibes. |
 | **sunset** | `sunset` | 9 | 274.6 MB | Golden-hour landscapes, calm oceans and warm skies. |
