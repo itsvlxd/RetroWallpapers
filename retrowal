@@ -237,20 +237,21 @@ EOF
 cmd_readme() {
     rx_log "info" "Refreshing README collection table..."
 
-    local table="| Collection | Branch | Wallpapers | Size | Preview |
-|------------|:------:|:----------:|:----:|:-------:|"
+    local table="| Preview | Collection | Branch | Wallpapers | Size | Description |
+|:-------:|-----------|:------:|:----------:|:----:|-----------|"
     while IFS= read -r line; do
         [[ -z $line ]] && continue
-        local name count size preview
+        local name count size desc preview
         name=$(echo "$line" | jq -r '.name')
         count=$(echo "$line" | jq -r '.count')
         size=$(echo "$line" | jq -r '.size_human')
+        desc=$(echo "$line" | jq -r '.description // empty')
         preview=$(echo "$line" | jq -r '.preview // empty')
         if [[ -n $preview ]]; then
             local branch_raw="${RAW_BASE%/main}/$name/$preview"
-            table+=$'\n'"| **$name** | \`$name\` | $count | $size | <img src=\"$branch_raw\" width=\"120\"> |"
+            table+=$'\n'"| <img src=\"$branch_raw\" width=\"120\"> | **$name** | \`$name\` | $count | $size | $desc |"
         else
-            table+=$'\n'"| **$name** | \`$name\` | $count | $size | — |"
+            table+=$'\n'"| — | **$name** | \`$name\` | $count | $size | $desc |"
         fi
     done < <(jq -c '.collections[]' "$METADATA_FILE")
 

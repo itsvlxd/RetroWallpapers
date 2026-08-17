@@ -17,12 +17,12 @@ Arch. Retro. Neon. Hand-tuned packs for every mood — pulled straight into your
 ## 📦 What's inside
 
 <!-- COLLECTIONS:START -->
-| Collection | Branch | Wallpapers | Size | Preview |
-|------------|:------:|:----------:|:----:|:-------:|
-| **dedsec** | `dedsec` | 10 | 6.8 MB | <img src="https://raw.githubusercontent.com/itsvlxd/retrowallpapers/dedsec/dedsec-no-signal.jpg" width="120"> |
-| **noir** | `noir` | 8 | 83.0 MB | <img src="https://raw.githubusercontent.com/itsvlxd/retrowallpapers/noir/fight-club-wallpaper.png" width="120"> |
-| **retro** | `retro` | 21 | 130.3 MB | <img src="https://raw.githubusercontent.com/itsvlxd/retrowallpapers/retro/retro-city-wallpaper.jpg" width="120"> |
-| **sunset** | `sunset` | 9 | 274.6 MB | <img src="https://raw.githubusercontent.com/itsvlxd/retrowallpapers/sunset/beach-sunset.jpg" width="120"> |
+| Preview | Collection | Branch | Wallpapers | Size | Description |
+|:-------:|-----------|:------:|:----------:|:----:|-----------|
+| <img src="https://raw.githubusercontent.com/itsvlxd/retrowallpapers/dedsec/dedsec-no-signal.jpg" width="120"> | **dedsec** | `dedsec` | 10 | 6.8 MB | Dark hacker-themed Watch Dogs wallpapers. |
+| <img src="https://raw.githubusercontent.com/itsvlxd/retrowallpapers/noir/fight-club-wallpaper.png" width="120"> | **noir** | `noir` | 8 | 83.0 MB | Dark, monochrome and cinematic. Stripped of color, full of mood. |
+| <img src="https://raw.githubusercontent.com/itsvlxd/retrowallpapers/retro/retro-city-wallpaper.jpg" width="120"> | **retro** | `retro` | 21 | 130.3 MB | Neon-soaked synthwave, retro cars and outrun vibes. |
+| <img src="https://raw.githubusercontent.com/itsvlxd/retrowallpapers/sunset/beach-sunset.jpg" width="120"> | **sunset** | `sunset` | 9 | 274.6 MB | Golden-hour landscapes, calm oceans and warm skies. |
 <!-- COLLECTIONS:END -->
 
 > Sizes auto-computed by GitHub Actions and stored in [`metadata.json`](metadata.json). Preview is a sample wallpaper from each pack.
