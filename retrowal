@@ -15,16 +15,53 @@ REPO_URL="${WALLPAPER_REPO_URL:-https://github.com/itsvlxd/retrowallpapers.git}"
 RAW_BASE="${WALLPAPER_RAW_BASE:-https://raw.githubusercontent.com/itsvlxd/retrowallpapers/main}"
 METADATA_FILE="$REPO_ROOT/metadata.json"
 README_FILE="$REPO_ROOT/README.md"
+DESCRIPTIONS_FILE="$REPO_ROOT/descriptions.json"
+
+_desc_for() {
+    local branch="$1"
+    local fallback="$2"
+    if [[ -f $DESCRIPTIONS_FILE ]]; then
+        local stored
+        stored=$(jq -r --arg b "$branch" '.[$b] // empty' "$DESCRIPTIONS_FILE" 2>/dev/null)
+        [[ -n $stored ]] && echo "$stored" && return 0
+    fi
+    echo "$fallback"
+}
+
+_desc_missing() {
+    local branch="$1"
+    if [[ -f $DESCRIPTIONS_FILE ]]; then
+        local stored
+        stored=$(jq -r --arg b "$branch" '.[$b] // empty' "$DESCRIPTIONS_FILE" 2>/dev/null)
+        [[ -n $stored ]] && return 1
+    fi
+    return 0
+}
+
+_desc_set() {
+    local branch="$1"
+    local desc="$2"
+    local tmp
+    tmp=$(mktemp)
+    if [[ -f $DESCRIPTIONS_FILE ]]; then
+        jq --arg b "$branch" --arg d "$desc" '.[$b] = $d' "$DESCRIPTIONS_FILE" >"$tmp"
+    else
+        jq -n --arg b "$branch" --arg d "$desc" '{($b): $d}' >"$tmp"
+    fi
+    mv "$tmp" "$DESCRIPTIONS_FILE"
+}
 
 _retrowal_help() {
     rx_help_usage "./retrowal <command> [options]"
     rx_help_commands "Available commands"
+    rx_help_cmd "pull" "Fetch origin and create local branches for every collection"
     rx_help_cmd "build" "Compute metadata.json + refresh the README collection table"
     rx_help_cmd "create <name> [dir]" "Create a new collection from a folder of wallpapers"
     rx_help_cmd "publish [--yes]" "Push all collection branches + main to GitHub"
     rx_help_cmd "list" "List collections in this repo"
     rx_help_cmd "--help, -h" "Show this help message"
     rx_help_examples
+    rx_help_example "./retrowal pull" "Fetch all remote collection branches locally (run first)"
     rx_help_example "./retrowal build" "Regenerate metadata + README"
     rx_help_example "./retrowal create neon /tmp/my-wallpapers" "Create the 'neon' collection"
     rx_help_example "./retrowal publish --yes" "Push everything, skip prompts"
@@ -41,15 +78,49 @@ _collection_branches() {
         | grep -vE '^(main|HEAD)$' | sort -u
 }
 
+_remote_collection_branches() {
+    git -C "$REPO_ROOT" for-each-ref --format='%(refname)' refs/remotes/origin 2>/dev/null \
+        | sed 's#^refs/remotes/origin/##' \
+        | grep -vE '^(main|HEAD)$' | sort -u
+}
+
+_local_collection_branches() {
+    git -C "$REPO_ROOT" for-each-ref --format='%(refname)' refs/heads 2>/dev/null \
+        | sed 's#^refs/heads/##' \
+        | grep -vE '^(main)$' | sort -u
+}
+
+# Verify every remote collection branch has a matching local branch.
+# Returns 0 if fully synced, 1 otherwise (logs the missing ones).
+_remote_synced() {
+    local synced=true
+    local branch
+    while IFS= read -r branch; do
+        [[ -n $branch ]] || continue
+        if ! git -C "$REPO_ROOT" show-ref --verify --quiet "refs/heads/$branch"; then
+            rx_log "warn" "Remote collection '$branch' is not present locally."
+            synced=false
+        fi
+    done < <(_remote_collection_branches)
+
+    if [[ $synced == true ]]; then
+        return 0
+    fi
+    rx_log "error" "Not all remote branches are local. Run './retrowal pull' first."
+    return 1
+}
+
 _branch_meta() {
     local branch="$1"
     local count=0 size=0
     local has_static=false has_live=false
+    local files=()
 
     while IFS=$'\t' read -r sz path; do
         [[ -z $sz ]] && continue
         count=$((count + 1))
         size=$((size + sz))
+        files+=("$path")
         case "${path,,}" in
             *.png|*.jpg|*.jpeg|*.webp|*.gif) has_static=true ;;
             *.mp4|*.mkv|*.webm) has_live=true ;;
@@ -63,12 +134,17 @@ _branch_meta() {
     [[ -z $sha ]] && return 1
     size_mb=$(awk -v b="$size" 'BEGIN{printf "%.1f", b/1048576}')
 
-    local desc=""
-    case "$branch" in
-        noir) desc="Dark, monochrome and cinematic. Stripped of color, full of mood." ;;
-        retro) desc="Neon-soaked synthwave, retro cars and outrun vibes." ;;
-        sunset) desc="Golden-hour landscapes, calm oceans and warm skies." ;;
-    esac
+    local desc
+    desc=$(_desc_for "$branch" "")
+
+    # Deterministic random-ish pick: seed from the branch sha so the README
+    # preview is stable between builds of the same collection.
+    local preview=""
+    if [[ $count -gt 0 ]]; then
+        local seed
+        seed=$((0x${sha:0:8} % count))
+        preview="${files[$seed]}"
+    fi
 
     local tags=""
     local first=1
@@ -85,12 +161,47 @@ _branch_meta() {
     fi
     [[ -z $tags ]] && tags="[]" || tags="[$tags]"
 
-    printf '{"name":"%s","branch":"%s","count":%d,"size_bytes":%d,"size_human":"%s MB","sha":"%s","description":"%s","tags":%s}' \
-        "$branch" "$branch" "$count" "$size" "$size_mb" "$sha" "$desc" "$tags"
+    printf '{"name":"%s","branch":"%s","count":%d,"size_bytes":%d,"size_human":"%s MB","sha":"%s","description":"%s","preview":"%s","tags":%s}' \
+        "$branch" "$branch" "$count" "$size" "$size_mb" "$sha" "$desc" "$preview" "$tags"
+}
+
+cmd_pull() {
+    local skip="${1:-false}"
+
+    if [[ $skip != "--yes" ]] && ! rx_confirm "Fetch origin and create local branches for every collection?" "Y"; then
+        rx_log "info" "Pull cancelled"
+        return 0
+    fi
+
+    rx_log "info" "Fetching origin..."
+    git -C "$REPO_ROOT" fetch origin 2>/dev/null || {
+        rx_log "error" "Fetch failed. Make sure a remote named 'origin' is configured."
+        return 1
+    }
+
+    local created=0 synced=0
+    local branch
+    while IFS= read -r branch; do
+        [[ -n $branch ]] || continue
+        if git -C "$REPO_ROOT" show-ref --verify --quiet "refs/heads/$branch"; then
+            synced=$((synced + 1))
+            rx_log "info" "$branch already local"
+        else
+            git -C "$REPO_ROOT" branch "$branch" "origin/$branch" 2>/dev/null
+            created=$((created + 1))
+            rx_log "success" "Created local branch '$branch'"
+        fi
+    done < <(_remote_collection_branches)
+
+    rx_log "success" "Done — $created branch(es) created, $synced already present."
 }
 
 cmd_build() {
     rx_log "info" "Scanning collection branches..."
+
+    if ! _remote_synced; then
+        return 1
+    fi
 
     local cols=""
     local first=1
@@ -126,16 +237,21 @@ EOF
 cmd_readme() {
     rx_log "info" "Refreshing README collection table..."
 
-    local table="| Collection | Branch | Wallpapers | Size | Mood |
-|------------|:------:|:----------:|:----:|------|"
+    local table="| Collection | Branch | Wallpapers | Size | Preview |
+|------------|:------:|:----------:|:----:|:-------:|"
     while IFS= read -r line; do
         [[ -z $line ]] && continue
-        local name count size desc
+        local name count size preview
         name=$(echo "$line" | jq -r '.name')
         count=$(echo "$line" | jq -r '.count')
         size=$(echo "$line" | jq -r '.size_human')
-        desc=$(echo "$line" | jq -r '.description')
-        table+=$'\n'"| **$name** | \`$name\` | $count | $size | $desc |"
+        preview=$(echo "$line" | jq -r '.preview // empty')
+        if [[ -n $preview ]]; then
+            local branch_raw="${RAW_BASE%/main}/$name/$preview"
+            table+=$'\n'"| **$name** | \`$name\` | $count | $size | <img src=\"$branch_raw\" width=\"120\"> |"
+        else
+            table+=$'\n'"| **$name** | \`$name\` | $count | $size | — |"
+        fi
     done < <(jq -c '.collections[]' "$METADATA_FILE")
 
     awk -v repl="$table" '
@@ -199,11 +315,43 @@ cmd_create() {
     rx_log "success" "Collection '$name' created on branch '$name'"
 
     git -C "$REPO_ROOT" checkout main >/dev/null 2>&1
+
+    local desc
+    desc=$(rx_input "Description for the '$name' collection:" "")
+    if [[ -z $desc ]]; then
+        rx_log "warn" "No description set — '$name' won't be publishable until you add one."
+    else
+        _desc_set "$name" "$desc"
+        git -C "$REPO_ROOT" add "$DESCRIPTIONS_FILE" >/dev/null 2>&1 || true
+        git -C "$REPO_ROOT" commit -m "chore(metadata): add description for $name" >/dev/null 2>&1 || true
+    fi
+
     cmd_build
 }
 
 cmd_publish() {
     local skip="${1:-false}"
+
+    if ! _remote_synced; then
+        return 1
+    fi
+
+    # Every local collection must have been built into metadata.json before
+    # it can be published. This catches collections created without running build.
+    local missing_meta=false
+    local branch
+    while IFS= read -r branch; do
+        [[ -n $branch ]] || continue
+        if ! jq -e --arg b "$branch" '.collections[] | select(.name == $b)' "$METADATA_FILE" >/dev/null 2>&1; then
+            rx_log "error" "Collection '$branch' has no metadata. Run './retrowal build' first."
+            missing_meta=true
+        fi
+    done < <(_local_collection_branches)
+
+    if [[ $missing_meta == true ]]; then
+        rx_log "error" "Cannot publish — metadata is missing for one or more collections. Run './retrowal build'."
+        return 1
+    fi
 
     local origin
     origin=$(git -C "$REPO_ROOT" remote get-url origin 2>/dev/null || echo "")
@@ -213,6 +361,37 @@ cmd_publish() {
         return 1
     fi
 
+    # Every collection needs a description before it can be published.
+    local missing_desc=false
+    while IFS= read -r branch; do
+        [[ -n $branch ]] || continue
+        if _desc_missing "$branch"; then
+            rx_log "warn" "Collection '$branch' has no description."
+            if [[ $skip != "--yes" ]]; then
+                local desc
+                desc=$(rx_input "Write a description for '$branch':" "")
+                if [[ -z $desc ]]; then
+                    missing_desc=true
+                    rx_log "error" "Description required for '$branch' — skipping it."
+                    continue
+                fi
+                _desc_set "$branch" "$desc"
+            else
+                missing_desc=true
+                rx_log "error" "Collection '$branch' is missing a description. Run 'create' or set it in $DESCRIPTIONS_FILE."
+            fi
+        fi
+    done < <(_collection_branches)
+
+    if [[ $missing_desc == true ]]; then
+        rx_log "error" "Cannot publish — one or more collections are missing a description."
+        return 1
+    fi
+
+    # Persist any descriptions gathered during this run before pushing.
+    git -C "$REPO_ROOT" add "$DESCRIPTIONS_FILE" >/dev/null 2>&1 || true
+    git -C "$REPO_ROOT" commit -m "chore(metadata): update collection descriptions" >/dev/null 2>&1 || true
+
     if [[ $skip != "--yes" ]] && ! rx_confirm "Push all branches + main to $origin?" "N"; then
         rx_log "info" "Publish cancelled"
         return 0
@@ -221,7 +400,6 @@ cmd_publish() {
     rx_log "info" "Pushing main..."
     git -C "$REPO_ROOT" push origin main 2>/dev/null || true
 
-    local branch
     while IFS= read -r branch; do
         [[ -n $branch ]] || continue
         rx_log "info" "Pushing $branch..."
@@ -256,6 +434,7 @@ _retrowal_main() {
         readme) cmd_readme ;;
         create) cmd_create "$2" "$3" ;;
         publish) cmd_publish "${2:-}" ;;
+        pull) cmd_pull "${2:-}" ;;
         list) cmd_list ;;
         help | -h | --help) _retrowal_help ;;
         *) _retrowal_help ;;
@@ -263,7 +442,7 @@ _retrowal_main() {
 }
 
 if [[ ${BASH_SOURCE[0]} != "${0}" ]]; then
-    export -f _retrowal_main cmd_build cmd_readme cmd_create cmd_publish cmd_list
+    export -f _retrowal_main cmd_build cmd_readme cmd_create cmd_publish cmd_pull cmd_list
 else
     _retrowal_main "$@"
 fi

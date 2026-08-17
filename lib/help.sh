@@ -143,6 +143,19 @@ rx_table_list_single() {
     printf " ${PINK}${icon}${RESET} ${text_color}%s${RESET}\n" "$text"
 }
 
+# Read a line from the controlling terminal when available, otherwise from
+# stdin. This keeps prompts working even when the surrounding loop has its
+# stdin redirected (e.g. `while ... done < <(git ...)`).
+_rx_read() {
+    local var="$1"
+    if [[ -e /dev/tty ]]; then
+        if read -r "$var" </dev/tty; then
+            return 0
+        fi
+    fi
+    read -r "$var"
+}
+
 rx_confirm() {
     local message="$1"
     local default="${2:-N}"
@@ -158,7 +171,8 @@ rx_confirm() {
         rx_log "info" "${message} ${PINK}[y/N]${RESET}: "
     fi
 
-    read -r confirm
+    local confirm
+    _rx_read confirm
     [[ -z $confirm ]] && confirm="$default"
 
     if [[ $confirm =~ ^[Yy]$ ]]; then
@@ -177,7 +191,38 @@ rx_yesno() {
     fi
 
     rx_log "info" "${message} ${PINK}[y/N]${RESET}: "
-    read -r result
+    _rx_read result
 
     [[ $result =~ ^[Yy]$ ]]
+}
+
+rx_input() {
+    local label="$1"
+    local default="${2:-}"
+    local pattern="${3:-}"
+    local error_msg="${4:-Invalid input}"
+
+    if [[ ${SKIP_PROMPT:-false} == "true" || ${RX_SETUP_YES:-false} == "true" ]]; then
+        echo "$default"
+        return 0
+    fi
+
+    while true; do
+        rx_log "info" "${label} ${MUTE}[${default}]${RESET}: "
+
+        local input
+        _rx_read input
+
+        [[ -z $input ]] && input="$default"
+
+        if [[ -n $pattern ]]; then
+            if [[ ! $input =~ $pattern ]]; then
+                rx_log "error" "${error_msg}"
+                continue
+            fi
+        fi
+
+        echo "$input"
+        return 0
+    done
 }
