@@ -1,0 +1,50 @@
+name: Refresh metadata on schedule
+
+on:
+  schedule:
+    - cron: '0 */12 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-metadata:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Install jq
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q jq
+
+      - name: Sync collection branches locally
+        run: |
+          chmod +x retrowal
+          bash retrowal pull --yes
+
+      - name: Build metadata + README
+        run: |
+          bash retrowal build
+
+      - name: Commit to main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout main
+          git pull --rebase origin main
+          bash retrowal build
+          if ! git diff --quiet HEAD -- metadata.json README.md; then
+            git add metadata.json README.md
+            git commit -m "chore(metadata): update collections info [skip ci]"
+            git push origin main
+          else
+            echo "metadata/README unchanged, skipping push"
+          fi
