@@ -24,9 +24,13 @@ jobs:
           sudo apt-get update -q
           sudo apt-get install -y -q jq
 
-      - name: Build metadata + README
+      - name: Sync collection branches locally
         run: |
           chmod +x retrowal
+          bash retrowal pull --yes
+
+      - name: Build metadata + README
+        run: |
           bash retrowal build
 
       - name: Commit to main
