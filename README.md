@@ -17,15 +17,15 @@ Arch. Retro. Neon. Hand-tuned packs for every mood — pulled straight into your
 ## 📦 What's inside
 
 <!-- COLLECTIONS:START -->
-| Collection | Branch | Wallpapers | Size | Mood |
-|------------|:------:|:----------:|:----:|------|
-| **dedsec** | `dedsec` | 10 | 6.8 MB |  |
-| **noir** | `noir` | 8 | 83.0 MB | Dark, monochrome and cinematic. Stripped of color, full of mood. |
-| **retro** | `retro` | 21 | 130.3 MB | Neon-soaked synthwave, retro cars and outrun vibes. |
-| **sunset** | `sunset` | 9 | 274.6 MB | Golden-hour landscapes, calm oceans and warm skies. |
+| Collection | Branch | Wallpapers | Size | Preview |
+|------------|:------:|:----------:|:----:|:-------:|
+| **dedsec** | `dedsec` | 10 | 6.8 MB | <img src="https://raw.githubusercontent.com/itsvlxd/retrowallpapers/dedsec/dedsec-no-signal.jpg" width="120"> |
+| **noir** | `noir` | 8 | 83.0 MB | <img src="https://raw.githubusercontent.com/itsvlxd/retrowallpapers/noir/fight-club-wallpaper.png" width="120"> |
+| **retro** | `retro` | 21 | 130.3 MB | <img src="https://raw.githubusercontent.com/itsvlxd/retrowallpapers/retro/retro-city-wallpaper.jpg" width="120"> |
+| **sunset** | `sunset` | 9 | 274.6 MB | <img src="https://raw.githubusercontent.com/itsvlxd/retrowallpapers/sunset/beach-sunset.jpg" width="120"> |
 <!-- COLLECTIONS:END -->
 
-> Sizes auto-computed by GitHub Actions and stored in [`metadata.json`](metadata.json).
+> Sizes auto-computed by GitHub Actions and stored in [`metadata.json`](metadata.json). Preview is a sample wallpaper from each pack.
 
 ---
 
@@ -50,41 +50,16 @@ Each collection is an **orphan branch** — a clean, history-free branch with on
 
 ---
 
-## 🖼️ Collections
-
-### noir
-
-<sub>Dark, monochrome and cinematic. Stripped of color, full of mood.</sub>
-
-<p align="center">
-  <kbd><img src="screenshots/noir.png" width="600" alt="noir preview"></kbd>
-</p>
-
-### retro
-
-<sub>Neon-soaked synthwave, retro cars and outrun vibes.</sub>
-
-<p align="center">
-  <kbd><img src="screenshots/retro.png" width="600" alt="retro preview"></kbd>
-</p>
-
-### sunset
-
-<sub>Golden-hour landscapes, calm oceans and warm skies.</sub>
-
-<p align="center">
-  <kbd><img src="screenshots/sunset.png" width="600" alt="sunset preview"></kbd>
-</p>
-
----
-
 ## 🏗️ Adding or updating a collection
 
 Collections live on **orphan branches**. Each branch holds only its own wallpapers; `main` holds this README, previews, and `metadata.json`.
 
-The easiest way is the bundled CLI:
+The bundled CLI is the easiest way to work with them — and **`./retrowal pull` is the first command you should run**:
 
 ```bash
+# FIRST: fetch origin and create a local branch for every collection
+./retrowal pull
+
 # Create a new collection from a folder of wallpapers
 ./retrowal create mypack /path/to/wallpapers
 
@@ -95,13 +70,28 @@ The easiest way is the bundled CLI:
 ./retrowal publish
 ```
 
-It recomputes file counts, sizes and branch SHAs, then updates this README's collection table automatically. On push, a GitHub Action re-runs the same build to keep `main` in sync.
+`pull` is required before `build` or `publish` can run — both will refuse to proceed until every remote collection branch exists locally.
+
+`build` recomputes file counts, sizes and branch SHAs, then updates this README's collection table automatically. `publish` will prompt for a description of any collection that doesn't have one yet, and will refuse to push if a new collection hasn't been built into `metadata.json`. On push, a GitHub Action re-runs the same build to keep `main` in sync.
 
 To remove a collection, delete the branch:
 
 ```bash
 git push origin --delete mypack
 ```
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome. The recommended flow is:
+
+1. **Clone** the repo and **pull** all collection branches locally.
+2. **Create or update** a collection on its orphan branch.
+3. **Build** the metadata + README.
+4. **Publish** to GitHub.
+
+See [**CONTRIBUTING.md**](CONTRIBUTING.md) for the full step-by-step guide, the exact CLI usage for every command, and the styling/licensing conventions to follow.
 
 ---
 
